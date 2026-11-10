@@ -1,3 +1,7 @@
+build"
+# cloud-mail-plus 部署配置【加固版】→ 整份复制，替换 mail-worker/wrangler.toml
+# 目标仓库：178hej/cloud-mail-plus
+# 变化：把 D1 / KV 绑定写进配置文件，避免每次 push 触发构建后绑定被清空。
 name = "cloud-mail"
 main = "src/index.js"
 compatibility_date = "2025-06-04"
@@ -6,45 +10,40 @@ keep_vars = true
 [observability]
 enabled = true
 
-#[[d1_databases]]
-#binding = "db"			#d1数据库绑定名默认不可修改
-#database_name = ""		#d1数据库名字
-#database_id = ""		#d1数据库id
+# 自定义域 66.hej66.cc.cd 和 R2 仍在 Cloudflare 控制台绑定，这里不写 routes / r2_buckets。
+# 也别启用 name = "email" 的 send_email：优先级高于 Brevo，且需要 Workers 付费。
 
-#[[kv_namespaces]]
-#binding = "kv"			#kv绑定名默认不可修改
-#id = ""					#kv数据库id
+# ↓↓↓ 关键：keep_vars 只保变量和 Secret，不保资源绑定。
+# 不写这两段，每次 Workers Builds 部署都会清掉 db / kv，站点报 "KV database not bound"。
+# 绑定名必须小写 db / kv，与代码里的 env.db / env.kv 对应。
+[[d1_databases]]
+binding = "db"
+database_name = "嘿"
+database_id = "b6d50883-e835-4153-b3a1-cf8f63204c1a"
 
-#[[r2_buckets]]
-#binding = "r2"			#r2对象存储绑定名默认不可修改
-#bucket_name = ""		#r2对象存储桶的名字
-
-#[[send_email]]
-#name = "email"			#CF发件, 配置后优先使用
+[[kv_namespaces]]
+binding = "kv"
+id = "b62af658f4044460bce143cd2357d59b"
 
 [[send_email]]
-name = "forward"		#站内转发到已验证的其他邮箱，不限制单个地址
+name = "forward"
 
 [ai]
 binding = "ai"
 
 [assets]
-binding = "assets"		#静态资源绑定名默认不可修改
-directory = "./dist"	#前端vue项目打包的静态资源存放位置,默认dist
+binding = "assets"
+directory = "./dist"
 not_found_handling = "single-page-application"
 run_worker_first = true
 
 [triggers]
-crons = ["0 * * * *"]	#每小时执行；resetDaySendCount 仅在 UTC 0 点生效
+crons = ["0 * * * *"]
 
-
+# domain / admin / jwt_secret / BREVO_API_KEY 全在控制台，这里必须留空，
+# 写占位值会覆盖真实值，导致登录和 init 全废。
 [vars]
-#ai_model = ""			#ai模型,不填默认使用@cf/meta/llama-3.1-8b-instruct-fast
-#analysis_cache = false			#是否开启分析数据缓存
-#orm_log = false			#是否sql日志
-#domain = []				#邮件域名可可配置多个 示例: ["example1.com","example2.com"]
-#admin = ""					#管理员的邮箱	示例: admin@example.com
-#jwt_secret = ""			#jwt令牌的密钥,随便填一串字符串
 
+# 仓库没有预编译 dist，这条负责打包前端，删掉会白屏或部署失败。
 [build]
 command = "pnpm --prefix ../mail-vue install && pnpm --prefix ../mail-vue run build"
