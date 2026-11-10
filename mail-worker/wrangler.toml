@@ -1,4 +1,3 @@
-build"
 # cloud-mail-plus 部署配置【加固版】→ 整份复制，替换 mail-worker/wrangler.toml
 # 目标仓库：178hej/cloud-mail-plus
 # 变化：把 D1 / KV 绑定写进配置文件，避免每次 push 触发构建后绑定被清空。
